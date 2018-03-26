@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<color name="colorPrimary">#3F51B5</color>
+	<color name="colorPrimaryDark">#303F9F</color>
+	<color name="colorAccent">#FF4081</color>
+	<color name="colorForTextView">@android:color/holo_orange_dark</color>
+
+	<color name="color_name_salon">#5b0404</color>
+	<color name="colorBackground">#535b0404</color>
+</resources>
