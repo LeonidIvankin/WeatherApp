@@ -33,11 +33,10 @@ public class WeatherDataLoader {
 			//в BufferedReader принимаем поток с сайта
 			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 			StringBuilder rawData = new StringBuilder(1024);
-			String tempVarible;
+			String tempVariable;
 
-			//читаем построчно сайт. Если не равна null добавляем в StringBuilder
-			while ((tempVarible = reader.readLine()) != null) {
-				rawData.append(tempVarible).append(NEW_LINE);
+			while ((tempVariable = reader.readLine()) != null) {
+				rawData.append(tempVariable).append(NEW_LINE);
 			}
 			reader.close();
 

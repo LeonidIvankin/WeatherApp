@@ -1,6 +1,8 @@
 package ru.leonidivankin.weatherapp;
 
 import android.graphics.drawable.Drawable;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -14,12 +16,14 @@ import org.json.JSONObject;
 
 public class WeatherActivity extends AppCompatActivity {
 
-	public static final String EXTRA_WEATHERNOM = "weatherNom";
+	public static final String EXTRA_POS = "pos";
 
 	//handler - это класс, позволяющий отправлять и обрабатывать сообщения и объекты runnable. Он используется в двух
 	//случаях: когда нужно применить объект runnable в будущем и когда необходимо передать другому потоку
 	//выполнение какого-то метода. Второй случай наш
 	private final Handler handler = new Handler();
+
+	private TextView name;
 
 	private TextView temp;
 	private TextView windSpeed;
@@ -27,36 +31,47 @@ public class WeatherActivity extends AppCompatActivity {
 	private TextView humidity;
 	private ImageView weatherIcon;
 
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_weather);
-		// Получить вид услуги сервиса
+
+
 		Bundle bundle = getIntent().getExtras();
+
 		if (bundle != null) {
-			int nailNom = bundle.getInt(EXTRA_WEATHERNOM);
-			Weather weather = Weather.weather[nailNom];
 
-			// Заполнить иpображение услуги сервиса
+			String city = bundle.getString(EXTRA_POS);
+			name = findViewById(R.id.name);
+			name.setText(city);
+
+			// Заполнить изображение услуги сервиса
 			ImageView photo = findViewById(R.id.photo);
-			photo.setImageResource(weather.getImageResourceId());
-			photo.setContentDescription(weather.getName());
+			photo.setImageResource(R.drawable.marker);
+			photo.setContentDescription(city);
 
-			// Заполнение наименования услуги сервиса
-			TextView name = findViewById(R.id.name);
-			name.setText(weather.getName());
-
-
-			temp = findViewById(R.id.temp_field);
-			windSpeed = findViewById(R.id.wind_speed_field);
-			pressure = findViewById(R.id.pressure_field);
-			humidity = findViewById(R.id.humidity_field);
-			weatherIcon = findViewById(R.id.weather_icon);
-
-
-			updateWeatherData(weather.getCityISO());
+			checkInternet(city);
 		}
+	}
+
+	private void checkInternet(String city) {
+		ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+		NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
+		if (networkinfo != null && networkinfo.isConnected()) {
+			Toast.makeText(this, "Интернет подключен", Toast.LENGTH_SHORT).show();
+			init();
+			updateWeatherData(city);
+		} else {
+			Toast.makeText(this, "Подключите интернет", Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	private void init() {
+		temp = findViewById(R.id.temp_field);
+		windSpeed = findViewById(R.id.wind_speed_field);
+		pressure = findViewById(R.id.pressure_field);
+		humidity = findViewById(R.id.humidity_field);
+		weatherIcon = findViewById(R.id.weather_icon);
 	}
 
 	//Обновление/загрузка погодных данных
@@ -164,4 +179,5 @@ public class WeatherActivity extends AppCompatActivity {
 		}
 		weatherIcon.setImageDrawable(drawable);
 	}
+
 }

@@ -107,7 +107,7 @@ public class WeatherGson {
 		@SerializedName("temp")
 		Double temp;
 		@SerializedName("pressure")
-		Integer pressure;
+		Double pressure;
 		@SerializedName("humidity")
 		Integer humidity;
 		@SerializedName("temp_min")
