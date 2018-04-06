@@ -1,11 +1,14 @@
 package ru.leonidivankin.weatherapp;
 
+import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,6 +33,11 @@ public class WeatherActivity extends AppCompatActivity {
 	private TextView pressure;
 	private TextView humidity;
 	private ImageView weatherIcon;
+	private String city;
+	private String tempStr;
+	private String windSpeedStr;
+	private String pressureStr;
+	private String humidityStr;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +49,7 @@ public class WeatherActivity extends AppCompatActivity {
 
 		if (bundle != null) {
 
-			String city = bundle.getString(EXTRA_POS);
+			city = bundle.getString(EXTRA_POS);
 			name = findViewById(R.id.name);
 			name.setText(city);
 
@@ -106,10 +114,15 @@ public class WeatherActivity extends AppCompatActivity {
 
 	private void renderWeather(WeatherGson weatherGson) {
 
-		temp.setText("температурка " + weatherGson.getTemp() + " °С");
-		windSpeed.setText("ветерок " + weatherGson.getWindSpeed() + " м/с");
-		pressure.setText("давленице " + weatherGson.getPressure() + " мм.рт.ст.");
-		humidity.setText("влажность " + weatherGson.getHumidity() + " %");
+		tempStr = "температурка " + weatherGson.getTemp() + " °С";
+		windSpeedStr = "ветерок " + weatherGson.getWindSpeed() + " м/с";
+		pressureStr = "давленице " + weatherGson.getPressure() + " мм.рт.ст.";
+		humidityStr = "влажность " + weatherGson.getHumidity() + " %";
+
+		temp.setText(tempStr);
+		windSpeed.setText(windSpeedStr);
+		pressure.setText(pressureStr);
+		humidity.setText(humidityStr);
 		setWeatherIcon(weatherGson.getIcon());
 
 	}
@@ -178,6 +191,35 @@ public class WeatherActivity extends AppCompatActivity {
 				break;
 		}
 		weatherIcon.setImageDrawable(drawable);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.menu_weather_activity, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+
+		switch (item.getItemId()) {
+			case R.id.menu_share:
+				shareWeather();
+				return true;
+			default:
+				return super.onOptionsItemSelected(item);
+		}
+
+	}
+
+	private void shareWeather() {
+		String msg = city + "\n" + tempStr + "\n" + windSpeedStr + "\n" + pressureStr + "\n" + humidityStr;
+
+		//неявный интент
+		Intent intent = new Intent(Intent.ACTION_SEND);
+		intent.setType("text/plain");
+		intent.putExtra(Intent.EXTRA_TEXT, msg);
+		startActivity(intent);
 	}
 
 }
