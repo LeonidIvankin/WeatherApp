@@ -1,7 +1,6 @@
 package ru.leonidivankin.weatherapp;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -10,50 +9,50 @@ import android.view.ViewGroup;
 
 import java.util.List;
 
-public class MyAdapter extends RecyclerView.Adapter<MyHolder> {
+public class CityRecyclerViewAdapter extends RecyclerView.Adapter<CityRecyclerViewHolder> {
 
 	Context context;
 	List<City> cities;
+	ClickListenerShowActivity clickListenerShowActivity;
 
-	private View v;
 
-	public MyAdapter(Context context, List<City> cities) {
+	private View view;
+
+	public CityRecyclerViewAdapter(Context context, List<City> cities) {
 		this.context = context;
 		this.cities = cities;
+		clickListenerShowActivity = (ClickListenerShowActivity) context;
 
 	}
 
 	@Override
-	public MyHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-		v = LayoutInflater.from(parent.getContext()).inflate(R.layout.model, null);
-		MyHolder holder = new MyHolder(v, context);
+	public CityRecyclerViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+		view = LayoutInflater.from(parent.getContext()).inflate(R.layout.model, null);
+		CityRecyclerViewHolder holder = new CityRecyclerViewHolder(view, context, cities);
 		return holder;
+
 	}
 
 	@Override
-	public void onBindViewHolder(MyHolder holder, int position) {
+	public void onBindViewHolder(CityRecyclerViewHolder holder, int position) {
 
 		holder.imageViewItemCity.setImageResource(R.drawable.marker);
 		holder.textViewItemCity.setText(cities.get(position).getName());
 
-		holder.setItemClickListener(new ItemClickListener() {
+		holder.setClickListenerOnItemClick(new ClickListenerOnItemClick() {
 			@Override
 			public void onItemClick(View v, int pos) {
 				Snackbar.make(v, cities.get(pos).getName(), Snackbar.LENGTH_SHORT).show();
-				showActivity(cities.get(pos).getName());
-
+				clickListenerShowActivity.showActivity(cities.get(pos).getName());
 			}
 		});
 	}
 
-	private void showActivity(String city) {
-		Intent intent = new Intent(context, WeatherActivity.class);
-		intent.putExtra(WeatherActivity.EXTRA_POS, city);
-		context.startActivity(intent);
-	}
 
 	@Override
 	public int getItemCount() {
 		return cities.size();
 	}
+
+
 }

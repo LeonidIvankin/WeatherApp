@@ -42,16 +42,16 @@ public class NoteDataSource {
 	}
 
 	//изменить
-	public void editNote(long id) {
-		ContentValues editedNote = new ContentValues();
-		editedNote.put(DBHelper.COLUMN_ID, id);
+	public void editNote(long id, String newName) {
+		ContentValues contentValues = new ContentValues();
+		contentValues.put(DBHelper.COLUMN_NAME, newName);
 
-		db.update(DBHelper.TABLE_NAME, editedNote, DBHelper.COLUMN_ID + "=" + id, null);
+		db.update(DBHelper.TABLE_NAME, contentValues, DBHelper.COLUMN_ID + " = " + id, null);
 	}
 
 	//удалить
 	public void deleteNote(long id) {
-		db.delete(DBHelper.TABLE_NAME, DBHelper.COLUMN_NAME + " = " + id, null);
+		db.delete(DBHelper.TABLE_NAME, DBHelper.COLUMN_ID + " = " + id, null);
 	}
 
 	public void deleteAll() {
@@ -66,6 +66,8 @@ public class NoteDataSource {
 				notesAllColumn, null, null, null, null, null);
 		//cursor - находится в определенной строке
 		cursor.moveToFirst();
+
+
 		while (!cursor.isAfterLast()) {//не вышел ли курсор за последнюю строку
 			City city = cursorToNote(cursor);
 			cities.add(city);
