@@ -2,6 +2,8 @@ package ru.leonidivankin.weatherapp;
 
 
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
@@ -17,17 +19,24 @@ import android.widget.EditText;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ClickListenerOnMenuItem, ClickListenerShowActivity {
 
-	NoteDataSource notesDataSource;
+	private static final String SAVED_CITY = "saveCity";
+	private NoteDataSource notesDataSource;
 	private RecyclerView recyclerView;
-	private MyAdapter adapter;
+	private CityRecyclerViewAdapter adapter;
 	private List<City> elements;
+	private String city;
+	private SharedPreferences sharedPreferences;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+
+		loadCity();
+
 
 		Toolbar toolbar = findViewById(R.id.toolbar);
 		setSupportActionBar(toolbar);
@@ -57,10 +66,15 @@ public class MainActivity extends AppCompatActivity {
 		//Назначим нашему RecyclerView созданный ранее layoutManager
 		recyclerView.setLayoutManager(layoutManager);
 		//ADAPTER
-		adapter = new MyAdapter(this, elements);
+		adapter = new CityRecyclerViewAdapter(this, elements);
 		defaultCity(DBHelper.DEFAULT_CITIES);
 		recyclerView.setAdapter(adapter);
+	}
 
+	@Override
+	protected void onPause() {
+		saveCity();
+		super.onPause();
 	}
 
 	@Override
@@ -91,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 		builder.show();
-
 	}
 
 	private void defaultCity(String[] defaultCities) {
@@ -103,13 +116,26 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+	public void editElement(final long id) {
 
-	private void editElement(long id) {
-		notesDataSource.editNote(id);
-		dataUpdated();
+		LayoutInflater factory = LayoutInflater.from(this);
+		final View alertView = factory.inflate(R.layout.custom_layout, null);
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setView(alertView);
+		builder.setTitle(R.string.alert_edit_city);
+		builder.setNegativeButton(R.string.alert_cancel, null);
+		builder.setPositiveButton(R.string.menu_edit, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int itemId) {
+				EditText editText = alertView.findViewById(R.id.name_edit_txt);
+				notesDataSource.editNote(id, editText.getText().toString());
+				dataUpdated();
+			}
+		});
+		builder.show();
 	}
 
-	private void deleteElement(long id) {
+	public void deleteElement(long id) {
 		notesDataSource.deleteNote(id);
 		dataUpdated();
 	}
@@ -141,6 +167,26 @@ public class MainActivity extends AppCompatActivity {
 				return super.onOptionsItemSelected(item);
 		}
 
+	}
+
+	public void showActivity(String city) {
+		this.city = city;
+		Intent intent = new Intent(this, WeatherActivity.class);
+		intent.putExtra(WeatherActivity.EXTRA_POS, city);
+		this.startActivity(intent);
+	}
+
+	public void saveCity() {
+		sharedPreferences = getPreferences(MODE_PRIVATE);
+		SharedPreferences.Editor editor = sharedPreferences.edit();
+		editor.putString(SAVED_CITY, city);
+		editor.commit();
+	}
+
+	public void loadCity() {
+		sharedPreferences = getPreferences(MODE_PRIVATE);
+		city = sharedPreferences.getString(SAVED_CITY, "");
+		if (!city.equals("")) showActivity(city);
 	}
 
 

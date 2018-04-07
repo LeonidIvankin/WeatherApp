@@ -13,6 +13,8 @@
 	<string name="alert_cancel">Cancel</string>
 	<string name="alert_add">Add</string>
 	<string name="menu_share">Share</string>
+	<string name="alert_edit_city">Edit name city</string>
+	<string name="email">lim14@yandex.ru</string>
 
 
 </resources>
