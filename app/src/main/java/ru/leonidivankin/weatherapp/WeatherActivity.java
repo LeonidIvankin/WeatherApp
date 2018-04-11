@@ -1,33 +1,26 @@
 package ru.leonidivankin.weatherapp;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.drawable.Drawable;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.google.gson.Gson;
-
-import org.json.JSONObject;
 
 public class WeatherActivity extends AppCompatActivity {
 
 	public static final String EXTRA_POS = "pos";
-
-	//handler - это класс, позволяющий отправлять и обрабатывать сообщения и объекты runnable. Он используется в двух
-	//случаях: когда нужно применить объект runnable в будущем и когда необходимо передать другому потоку
-	//выполнение какого-то метода. Второй случай наш
-	private final Handler handler = new Handler();
+	public static final String SELECTION_CITY = "selectionCity";
+	public static final int DELAY_MILLIS = 1000;
 
 	private TextView name;
-
 	private TextView temp;
 	private TextView windSpeed;
 	private TextView pressure;
@@ -38,41 +31,85 @@ public class WeatherActivity extends AppCompatActivity {
 	private String windSpeedStr;
 	private String pressureStr;
 	private String humidityStr;
+	private WeatherUpdateService weatherUpdateService;
+	private boolean bound = false;
+
+	private ServiceConnection connection = new ServiceConnection() {
+		@Override
+		public void onServiceConnected(ComponentName componentName, IBinder binder) {
+			WeatherUpdateService.WeatherUpdateBinder weatherUpdateBinder =
+					(WeatherUpdateService.WeatherUpdateBinder) binder;
+			weatherUpdateService = weatherUpdateBinder.getOdometer();
+			bound = true;
+		}
+
+		@Override
+		public void onServiceDisconnected(ComponentName componentName) {
+			bound = false;
+		}
+	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_weather);
 
-
+		init();
+		displayWeatherGson();
 		Bundle bundle = getIntent().getExtras();
 
 		if (bundle != null) {
-
 			city = bundle.getString(EXTRA_POS);
 			name = findViewById(R.id.name);
 			name.setText(city);
-
 			// Заполнить изображение услуги сервиса
 			ImageView photo = findViewById(R.id.photo);
 			photo.setImageResource(R.drawable.marker);
 			photo.setContentDescription(city);
-
-			checkInternet(city);
 		}
 	}
 
-	private void checkInternet(String city) {
-		ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-		NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
-		if (networkinfo != null && networkinfo.isConnected()) {
-			Toast.makeText(this, "Интернет подключен", Toast.LENGTH_SHORT).show();
-			init();
-			updateWeatherData(city);
-		} else {
-			Toast.makeText(this, "Подключите интернет", Toast.LENGTH_SHORT).show();
+	@Override
+	protected void onStart() {
+		super.onStart();
+		Intent intent = new Intent(this, WeatherUpdateService.class);
+		intent.putExtra(SELECTION_CITY, city);
+		bindService(intent, connection, Context.BIND_AUTO_CREATE);
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		if (bound) {
+			unbindService(connection);
+			bound = false;
 		}
 	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+	}
+
+
+
+
+	private void displayWeatherGson() {
+		final Handler handler = new Handler();
+		handler.post(new Runnable() {
+			@Override
+			public void run() {
+				if (bound && weatherUpdateService != null) {
+					WeatherGson weatherGson = weatherUpdateService.getWeatherGson();
+					if(weatherGson != null){
+						renderWeather(weatherGson);
+					}
+				}
+				handler.postDelayed(this, DELAY_MILLIS);
+			}
+		});
+	}
+
 
 	private void init() {
 		temp = findViewById(R.id.temp_field);
@@ -82,38 +119,8 @@ public class WeatherActivity extends AppCompatActivity {
 		weatherIcon = findViewById(R.id.weather_icon);
 	}
 
-	//Обновление/загрузка погодных данных
-	private void updateWeatherData(final String city) {
-		//создание отдельного потока
-		new Thread() {
-			public void run() {
-				//получаем объект json
-				final JSONObject json = WeatherDataLoader.getJSONData(city);
-				// Вызов методов напрямую может вызвать runtime error
-				// Мы не можем напрямую обновить UI, поэтому используем handler, чтобы обновить интерфейс в главном потоке.
-				if (json == null) {
-					handler.post(new Runnable() {
-						@Override
-						public void run() {
-							Toast.makeText(getApplicationContext(), R.string.place_not_found, Toast.LENGTH_SHORT).show();
-						}
-					});
-				} else {
-					//если объект не null, нужно его распарсить
-					final WeatherGson weatherGson = new Gson().fromJson(json.toString(), WeatherGson.class);
-					handler.post(new Runnable() {
-						@Override
-						public void run() {
-							renderWeather(weatherGson);
-						}
-					});
-				}
-			}
-		}.start();
-	}
 
 	private void renderWeather(WeatherGson weatherGson) {
-
 		tempStr = "температурка " + weatherGson.getTemp() + " °С";
 		windSpeedStr = "ветерок " + weatherGson.getWindSpeed() + " м/с";
 		pressureStr = "давленице " + weatherGson.getPressure() + " мм.рт.ст.";
@@ -124,7 +131,6 @@ public class WeatherActivity extends AppCompatActivity {
 		pressure.setText(pressureStr);
 		humidity.setText(humidityStr);
 		setWeatherIcon(weatherGson.getIcon());
-
 	}
 
 	// Подстановка нужной иконки
@@ -214,7 +220,6 @@ public class WeatherActivity extends AppCompatActivity {
 
 	private void shareWeather() {
 		String msg = city + "\n" + tempStr + "\n" + windSpeedStr + "\n" + pressureStr + "\n" + humidityStr;
-
 		//неявный интент
 		Intent intent = new Intent(Intent.ACTION_SEND);
 		intent.setType("text/plain");
